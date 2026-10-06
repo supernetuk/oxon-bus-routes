@@ -1,33 +1,53 @@
 name: Build bus routes
 
 on:
- schedule:
-   - cron: "20 4 1 * *"   # 04:20 UTC on the 1st of every month
- workflow_dispatch:        # adds a "Run workflow" button
+  schedule:
+    - cron: "20 3 1 * *"   # 03:20 UTC on the 1st of every month
+  workflow_dispatch:        # adds a "Run workflow" button
 
 permissions:
- contents: write
+  contents: write   # for the small last-build.txt commit (keeps the schedule active)
+  pages: write      # to publish the route files
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 jobs:
- build:
-   runs-on: ubuntu-latest
-   timeout-minutes: 60
-   steps:
-     - uses: actions/checkout@v4
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
 
-     - uses: actions/setup-python@v5
-       with:
-         python-version: "3.12"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-     - name: Build routes.json from BODS timetables
-       env:
-         BODS_API_KEY: ${{ secrets.BODS_API_KEY }}
-       run: python build_routes.py --out routes.json --keep-zip /tmp/south_east_gtfs.zip
+      - name: Build route files for England from BODS timetables
+        env:
+          BODS_API_KEY: ${{ secrets.BODS_API_KEY }}
+        run: python build_routes.py --site site
 
-     - name: Save routes.json to the repository
-       run: |
-         git config user.name "github-actions[bot]"
-         git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-         git add routes.json
-         git diff --cached --quiet || git commit -m "Update routes.json"
-         git push
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+      - name: Publish to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
+
+      - name: Record build date (keeps the monthly schedule switched on)
+        run: |
+          cp site/info.json last-build.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add last-build.json
+          git diff --cached --quiet || git commit -m "Route build $(date -u +%Y-%m-%d)"
+          git push
