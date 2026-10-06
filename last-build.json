@@ -1,0 +1,20 @@
+{
+ "generated": "2026-10-06T20:29:16Z",
+ "source": "Bus Open Data Service (DfT), Open Government Licence v3.0",
+ "regions": [
+  "east_anglia",
+  "east_midlands",
+  "london",
+  "north_east",
+  "north_west",
+  "south_east",
+  "south_west",
+  "west_midlands",
+  "yorkshire",
+  "scotland",
+  "wales"
+ ],
+ "operator_lines": 12695,
+ "line_names": 3382,
+ "megabytes": 44.0
+}
