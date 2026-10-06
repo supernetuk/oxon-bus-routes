@@ -296,8 +296,10 @@ def process_zip(zip_path, label):
         shape_id, heads = extra[((noc, line, direction), pid)]
         if shape_id and len(shapes.get(shape_id, ())) >= 2:
             pts = [[p[1], p[2]] for p in sorted(shapes[shape_id])]
+            geom = "shape"
         else:
-            pts = [[s[1], s[2]] for s in stop_rows]
+            pts = [[s[1], s[2]] for s in stop_rows]   # no road path published: the map asks TomTom for one
+            geom = "stops"
         pts = simplify(pts, SIMPLIFY_METRES)
         lats = [p[0] for p in pts] + [s[1] for s in stop_rows]
         lons = [p[1] for p in pts] + [s[2] for s in stop_rows]
@@ -309,6 +311,7 @@ def process_zip(zip_path, label):
             "to": stop_rows[-1][0],
             "trips": count,
             "shape": encode_polyline(pts),
+            "geom": geom,
             "stops": encode_polyline([(s[1], s[2]) for s in stop_rows]),
             "names": [s[0] for s in stop_rows],
             "bbox": [round(min(lats), 4), round(min(lons), 4), round(max(lats), 4), round(max(lons), 4)],
